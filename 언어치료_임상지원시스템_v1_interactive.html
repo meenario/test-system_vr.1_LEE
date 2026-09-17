@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>언어치료 임상지원 시스템 v1</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --text:#20242a; --muted:#667085; --line:#d9dee7;
+  --accent:#445b8f; --accent2:#e9eef9; --good:#2e7d5b; --warn:#9a6a1b; --bad:#a94442;
+  --soft:#f1f3f6; --shadow:0 6px 18px rgba(24,39,75,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Arial,sans-serif;line-height:1.55}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.shell{max-width:1440px;margin:0 auto;padding:20px}
+.topbar{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.title h1{margin:0;font-size:28px}
+.title p{margin:5px 0 0;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 13px;color:var(--text)}
+.btn:hover{background:#f8f9fb}
+.btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.btn.good{background:var(--good);color:white;border-color:var(--good)}
+.btn.warn{background:#fff8e9;border-color:#e8c47e;color:#6a4a0c}
+.grid{display:grid;grid-template-columns:235px minmax(0,1fr);gap:16px}
+.nav{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:var(--shadow);align-self:start;position:sticky;top:12px}
+.nav button{width:100%;border:0;background:transparent;text-align:left;padding:11px 12px;border-radius:9px;margin:2px 0;color:var(--text)}
+.nav button.active{background:var(--accent2);color:var(--accent);font-weight:700}
+.nav .sep{height:1px;background:var(--line);margin:9px 4px}
+.content{min-width:0}
+.section{display:none}
+.section.active{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.card h2{font-size:21px;margin:0 0 4px}
+.card h3{font-size:17px;margin:18px 0 8px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:14px}
+.formgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.field{grid-column:span 4;min-width:0}
+.field.w6{grid-column:span 6}
+.field.w8{grid-column:span 8}
+.field.w12{grid-column:span 12}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+input[type=text],input[type=date],input[type=number],select,textarea{
+ width:100%;border:1px solid #cfd6e0;background:white;border-radius:9px;padding:9px 10px;color:var(--text)
+}
+textarea{min-height:92px;resize:vertical}
+.checkbox-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.check{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:9px;background:#fff}
+.check input{margin-top:3px}
+.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;background:var(--soft);margin:2px 4px 2px 0}
+.notice{padding:12px 14px;border-radius:10px;background:#f7f9fc;border:1px solid var(--line);color:#475467}
+.notice.good{background:#eef8f3;border-color:#bfe2d2;color:#215b43}
+.notice.warn{background:#fff8e9;border-color:#ead09b;color:#6a4a0c}
+.result-card{border-left:4px solid var(--accent);background:#fbfcfe;padding:12px 14px;margin:10px 0;border-radius:8px}
+.result-card h4{margin:0 0 5px}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top;font-size:14px}
+th{background:#f8f9fb}
+.small{font-size:12px;color:var(--muted)}
+.metric-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.metric{border:1px solid var(--line);border-radius:10px;padding:12px;background:white}
+.metric b{display:block;font-size:20px}
+.footer{color:var(--muted);font-size:12px;margin-top:16px;text-align:center}
+.hidden{display:none!important}
+.kicker{font-size:12px;font-weight:800;color:var(--accent);letter-spacing:.03em;text-transform:uppercase}
+hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+@media(max-width:980px){
+ .grid{grid-template-columns:1fr}
+ .nav{position:static;display:flex;overflow:auto;gap:4px}
+ .nav button{min-width:max-content;width:auto}
+ .nav .sep{display:none}
+ .field,.field.w6,.field.w8{grid-column:span 12}
+ .checkbox-grid{grid-template-columns:1fr 1fr}
+ .metric-grid{grid-template-columns:1fr 1fr}
+ .topbar{flex-direction:column}
+ .actions{justify-content:flex-start}
+}
+@media(max-width:560px){
+ .shell{padding:10px}
+ .checkbox-grid,.metric-grid{grid-template-columns:1fr}
+ .title h1{font-size:23px}
+}
+@media print{
+ body{background:white}
+ .nav,.actions,.no-print{display:none!important}
+ .grid{display:block}
+ .section{display:none!important}
+ #report.section{display:block!important}
+ .card{box-shadow:none;border:0;padding:0}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="title">
+      <div class="kicker">SLP Clinical Support</div>
+      <h1>언어치료 임상지원 시스템 v1</h1>
+      <p>평가 기록 → 프로파일 정리 → 중재 접근 후보 → 수업자료 추천 → 보고서</p>
+    </div>
+    <div class="actions no-print">
+      <button class="btn" id="newBtn">새 기록</button>
+      <button class="btn" id="saveLocalBtn">브라우저 저장</button>
+      <button class="btn" id="downloadJsonBtn">JSON 내보내기</button>
+      <label class="btn" for="importJson">JSON 불러오기</label>
+      <input id="importJson" type="file" accept=".json,application/json" class="hidden">
+      <button class="btn primary" id="printBtn">보고서 인쇄/PDF</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <nav class="nav no-print" id="nav">
+      <button data-tab="basic" class="active">1. 기본정보</button>
+      <button data-tab="early">2. 영유아·학령전기</button>
+      <button data-tab="school">3. 학령기·화용·문해</button>
+      <button data-tab="speech">4. 말소리 평가</button>
+      <button data-tab="intervention">5. 중재계획</button>
+      <button data-tab="materials">6. 수업자료 은행</button>
+      <div class="sep"></div>
+      <button data-tab="report">7. 보고서</button>
+      <button data-tab="guide">8. 시스템 안내</button>
+    </nav>
+
+    <main class="content">
+      <section id="basic" class="section active">
+        <div class="card">
+          <h2>기본정보</h2>
+          <div class="sub">실명 대신 아동 ID/별칭 사용을 권장합니다.</div>
+          <div class="formgrid">
+            <div class="field"><label>아동 ID</label><input id="childId" type="text"></div>
+            <div class="field"><label>이름/별칭</label><input id="alias" type="text"></div>
+            <div class="field"><label>성별</label><select id="sex"><option></option><option>남</option><option>여</option><option>기타/미기재</option></select></div>
+            <div class="field"><label>생년월일</label><input id="birth" type="date"></div>
+            <div class="field"><label>평가일</label><input id="evalDate" type="date"></div>
+            <div class="field"><label>연령군</label>
+              <select id="ageGroup">
+                <option>영유아(0~2세)</option><option selected>학령전기(3~6세)</option>
+                <option>초등 저학년</option><option>초등 고학년</option><option>중·고등</option><option>성인</option>
+              </select>
+            </div>
+            <div class="field w6"><label>진단/특이사항</label><input id="diagnosis" type="text"></div>
+            <div class="field w6"><label>주 평가영역</label>
+              <select id="primaryArea">
+                <option></option><option>초기 의사소통</option><option>수용·표현언어</option>
+                <option>화용·사회적 의사소통</option><option>이야기·담화</option><option>읽기·문해</option>
+                <option>말소리</option><option>유창성</option><option>기타</option>
+              </select>
+            </div>
+            <div class="field w6"><label>구어 수준</label>
+              <select id="speechLevel">
+                <option></option><option>자발어 거의 없음</option><option>낱말 수준</option><option>2~3어 조합</option>
+                <option>문장 수준</option><option>연결발화 가능</option>
+              </select>
+            </div>
+            <div class="field w12"><label>의뢰사유/현재 가장 큰 어려움</label><textarea id="referral"></textarea></div>
+          </div>
+          <hr>
+          <button class="btn primary" id="moduleBtn">권장 모듈 보기</button>
+          <div id="moduleHint" class="notice" style="margin-top:10px">기본정보를 입력한 뒤 확인하세요.</div>
+        </div>
+      </section>
+
+      <section id="early" class="section">
+        <div class="card">
+          <h2>영유아·학령전기</h2>
+          <div class="sub">수용·표현언어, 의사소통 기능, 상징놀이, 선호도·환경어휘를 함께 기록합니다.</div>
+
+          <h3>수용·표현언어</h3>
+          <div class="formgrid">
+            <div class="field w6"><label>이해언어</label><textarea id="receptive"></textarea></div>
+            <div class="field w6"><label>표현언어</label><textarea id="expressive"></textarea></div>
+          </div>
+
+          <h3>의사소통 기능</h3>
+          <div class="small">상위기능과 주된 산출형태를 체크하고, 실제 하위기능/예시는 자유기록합니다.</div>
+          <div class="checkbox-grid" id="commFunctionChecks"></div>
+          <h3>산출형태</h3>
+          <div class="checkbox-grid" id="commModeChecks"></div>
+          <div style="margin-top:10px"><label>실제 관찰 예시/하위기능</label><textarea id="commExamples" placeholder="예: 사물 요구 - 몸짓+말 / '주세요'; 거부 - 몸짓 ..."></textarea></div>
+
+          <h3>상징놀이</h3>
+          <div class="formgrid">
+            <div class="field w8"><label>현재 관찰되는 최고 단계</label><select id="playStage"></select></div>
+            <div class="field"><label>자발성/도움 수준</label><select id="playIndependence"><option></option><option>자발</option><option>모델링 후</option><option>도움 필요</option><option>관찰되지 않음</option></select></div>
+            <div class="field w12"><label>놀이 예시</label><textarea id="playExamples"></textarea></div>
+          </div>
+
+          <h3>선호도·환경어휘</h3>
+          <div class="formgrid">
+            <div class="field w6"><label>음식 선호/비선호</label><input id="prefFood" type="text"></div>
+            <div class="field w6"><label>물건 선호/비선호</label><input id="prefObject" type="text"></div>
+            <div class="field w6"><label>활동 선호/비선호</label><input id="prefActivity" type="text"></div>
+            <div class="field w6"><label>기타 선호/비선호</label><input id="prefOther" type="text"></div>
+            <div class="field w12"><label>환경어휘 기록</label><textarea id="envVocab" placeholder="시간/활동/장소/대화상대자/현재 사용하는 어휘/필요 어휘"></textarea></div>
+            <div class="field w12"><label>보호자 우선요구</label><textarea id="caregiverPriority"></textarea></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="school" class="section">
+        <div class="card">
+          <h2>학령기·화용·문해</h2>
+          <div class="sub">0=뚜렷한 어려움, 1=어려움 있음, 2=부분적으로 적절, 3=대체로 적절. 표준점수가 아닌 임상 기록용입니다.</div>
+          <div class="formgrid" id="schoolRatings"></div>
+          <div style="margin-top:12px"><label>학령기 관찰/검사 메모</label><textarea id="schoolNotes"></textarea></div>
+
+          <h3>화용평가 기록</h3>
+          <div class="formgrid">
+            <div class="field w6"><label>사용 양식</label>
+              <select id="pragForm">
+                <option></option>
+                <option>CPLC 44문항 4영역 프로파일</option>
+                <option>CPLC 원자료형(문항 버전 확인 필요)</option>
+                <option>기타 화용평가</option>
+              </select>
+            </div>
+            <div class="field w6"><label>총점/원점수(해당 시)</label><input id="pragTotal" type="number" step="0.1"></div>
+            <div class="field w12"><label>하위영역/문항별 강점·어려움</label><textarea id="pragNotes"></textarea></div>
+          </div>
+
+          <h3>이야기·담화 간단 계산기</h3>
+          <div class="formgrid">
+            <div class="field"><label>TNW</label><input id="tnw" type="number" min="0"></div>
+            <div class="field"><label>NDW</label><input id="ndw" type="number" min="0"></div>
+            <div class="field"><label>C-unit 수</label><input id="cunits" type="number" min="0"></div>
+            <div class="field"><label>전체 절 수</label><input id="clauses" type="number" min="0"></div>
+          </div>
+          <div class="metric-grid" style="margin-top:12px">
+            <div class="metric"><span class="small">TTR</span><b id="mTTR">-</b></div>
+            <div class="metric"><span class="small">MLC-w</span><b id="mMLC">-</b></div>
+            <div class="metric"><span class="small">절밀도</span><b id="mClause">-</b></div>
+            <div class="metric"><span class="small">TNW</span><b id="mTNW">-</b></div>
+            <div class="metric"><span class="small">NDW</span><b id="mNDW">-</b></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="speech" class="section">
+        <div class="card">
+          <h2>말소리 평가</h2>
+          <div class="sub">표준화 검사, 자발화, 심화검사, 말처리/음운처리 정보를 한 곳에 기록합니다.</div>
+
+          <label>표준화 검사 및 자발화 평가 결과</label>
+          <textarea id="standardNotes" placeholder="검사명, 원점수/백분위, PCC/PCC-R/PWC/PMLU/PWP, 오류패턴 등"></textarea>
+
+          <div class="formgrid" style="margin-top:12px">
+            <div class="field"><label>PCC(%)</label><input id="pcc" type="number" min="0" max="100" step="0.1"></div>
+            <div class="field"><label>말명료도</label><select id="intelligibility"><option></option><option>매우 낮음</option><option>낮음</option><option>중간</option><option>높음</option></select></div>
+            <div class="field"><label>주요 오류 음소 수</label><input id="errorPhonemes" type="number" min="0"></div>
+            <div class="field"><label>체계적인 음운오류패턴</label><select id="systematicPatterns"><option></option><option>예</option><option>아니오</option><option>불명확</option></select></div>
+            <div class="field"><label>비일관성(%)</label><input id="inconsistency" type="number" min="0" max="100" step="0.1"></div>
+            <div class="field"><label>자극반응도</label><select id="stimulability"><option></option><option>높음</option><option>중간</option><option>낮음</option><option>미평가</option></select></div>
+          </div>
+
+          <div style="margin-top:12px"><label>오류 음소/음운변동 기록</label><textarea id="patternNotes"></textarea></div>
+
+          <div class="formgrid" style="margin-top:12px">
+            <div class="field"><label>학령기 잔존오류</label><select id="residualError"><option></option><option>예</option><option>아니오</option><option>불명확</option></select></div>
+            <div class="field"><label>언어장애 동반</label><select id="languageDisorder"><option></option><option>예</option><option>아니오</option><option>불명확</option></select></div>
+            <div class="field"><label>제한된 음소목록/음절구조</label><select id="limitedInventory"><option></option><option>예</option><option>아니오</option><option>불명확</option></select></div>
+            <div class="field"><label>음운인식/읽기 위험</label><select id="paRisk"><option></option><option>예</option><option>아니오</option><option>불명확</option></select></div>
+          </div>
+
+          <h3>아동기 말실행증 관련 관찰 특성</h3>
+          <div class="checkbox-grid" id="casChecks"></div>
+
+          <div class="formgrid" style="margin-top:12px">
+            <div class="field w6"><label>구개열/연인두 기능부전 관련</label>
+              <select id="cleftStatus"><option>해당 없음/미상</option><option>구조적/필연적 오류 의심</option><option>학습된 보상조음 의심</option></select>
+            </div>
+            <div class="field w6"><label>조음기관 구조·기능</label><textarea id="oralMech"></textarea></div>
+            <div class="field w12"><label>말처리/음운처리</label><textarea id="processingNotes" placeholder="말지각, 음운표상, 음운인식, 음운기억, 음운인출, 운동프로그래밍/실행 등"></textarea></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="intervention" class="section">
+        <div class="card">
+          <h2>중재계획</h2>
+          <div class="sub">자동 진단이 아니라, 입력된 특성과 정리된 치료원리를 연결해 치료사가 검토할 후보를 제시합니다.</div>
+          <button class="btn primary" id="recommendBtn">말소리 중재 접근 후보 생성</button>
+          <div id="recommendations" style="margin-top:12px"></div>
+
+          <h3>치료사 최종 계획</h3>
+          <div class="formgrid">
+            <div class="field w12"><label>장기목표</label><textarea id="longGoals"></textarea></div>
+            <div class="field w12"><label>단기목표</label><textarea id="shortGoals"></textarea></div>
+            <div class="field w12"><label>일반화/가정연계</label><textarea id="homeGeneralization"></textarea></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="materials" class="section">
+        <div class="card">
+          <h2>수업자료 은행</h2>
+          <div class="sub">자료를 등록해두면 연령·영역·목표·난이도 기준으로 추천합니다. 자료 파일 자체 분석은 추후 추가할 수 있습니다.</div>
+
+          <h3>자료 등록</h3>
+          <div class="formgrid">
+            <div class="field w6"><label>자료명</label><input id="matName" type="text"></div>
+            <div class="field"><label>주 대상 연령군</label><select id="matAge"></select></div>
+            <div class="field"><label>난이도</label><select id="matDifficulty"><option>초급</option><option>중급</option><option>고급</option></select></div>
+            <div class="field w12"><label>적용 영역</label><div class="checkbox-grid" id="matDomainChecks"></div></div>
+            <div class="field w12"><label>가능한 중재목표</label><input id="matTargets" type="text" placeholder="예: 사건 순서화, 접속사, 주제유지"></div>
+            <div class="field w6"><label>파일명/위치 메모</label><input id="matFileNote" type="text"></div>
+            <div class="field w6"><label>활용방법</label><textarea id="matUsage"></textarea></div>
+          </div>
+          <button class="btn good" id="addMaterialBtn">자료 등록</button>
+
+          <h3>자료 추천</h3>
+          <div class="formgrid">
+            <div class="field"><label>연령군</label><select id="recAge"></select></div>
+            <div class="field"><label>중재 영역</label><select id="recDomain"></select></div>
+            <div class="field"><label>난이도</label><select id="recDifficulty"><option>상관없음</option><option>초급</option><option>중급</option><option>고급</option></select></div>
+            <div class="field"><label>목표 키워드</label><input id="recTarget" type="text" placeholder="예: 종성, 주제유지, 이야기 순서"></div>
+          </div>
+          <button class="btn primary" id="recommendMaterialBtn">자료 추천</button>
+          <div id="materialResults" style="margin-top:12px"></div>
+
+          <h3>등록 자료</h3>
+          <div style="overflow:auto">
+            <table>
+              <thead><tr><th>ID</th><th>자료명</th><th>연령</th><th>영역</th><th>목표</th><th>난이도</th><th></th></tr></thead>
+              <tbody id="materialTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="report" class="section">
+        <div class="card">
+          <h2>임상 기록 요약</h2>
+          <div class="sub no-print">입력 내용이 자동 반영됩니다. 상단의 '인쇄/PDF' 버튼으로 저장할 수 있습니다.</div>
+          <div id="reportBody"></div>
+        </div>
+      </section>
+
+      <section id="guide" class="section">
+        <div class="card">
+          <h2>시스템 안내</h2>
+          <div class="notice">
+            <b>현재 v1에 반영된 큰 틀</b><br>
+            초기 의사소통 · 상징놀이 · 선호도/환경어휘 · 학령기 언어/화용/문해 · 말소리 평가 · 말소리 중재 · 수업자료 은행
+          </div>
+          <h3>CPLC</h3>
+          <p>사용자가 제공한 자료에서 문항 수/점수체계 버전 차이가 확인되어 현재 버전에서는 양식명, 총점, 주요 강점·어려움 기록만 지원합니다.</p>
+          <h3>말소리 중재 추천</h3>
+          <p>중재 후보는 입력된 프로파일을 기준으로 말운동 접근, 음운적 접근/주기법, 의사소통적 접근/EMT+PE, 핵심어휘접근, CAS 심화평가/DTTC 검토, 통합적 음운인식중재, 구개열/VPI 관련 고려 등을 제시합니다.</p>
+          <h3>데이터 저장</h3>
+          <p>브라우저 저장은 현재 브라우저의 localStorage에 저장됩니다. 민감정보 최소화를 위해 아동 ID/별칭 사용을 권장합니다. 중요한 기록은 JSON으로 별도 백업하세요.</p>
+          <div class="notice warn"><b>주의:</b> 본 도구는 임상 기록과 의사결정을 보조하는 시스템이며 자동 진단 도구가 아닙니다.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="footer">언어치료 임상지원 시스템 v1 · 단일 HTML 프로토타입</div>
+</div>
+
+<script>
+(function(){
+  const AGE_GROUPS=["영유아(0~2세)","학령전기(3~6세)","초등 저학년","초등 고학년","중·고등","성인"];
+  const COMM_FUNCTIONS=["요구","반응","객관적 언급","주관적 진술","메시지 수신표현","구성요소","발전된 표현"];
+  const COMM_MODES=["몸짓","몸짓+발성","몸짓+말","말"];
+  const PLAY_STAGES=[
+    "탐험놀이 (약 9~10개월)","전상징기적 행동 (약 11~13개월)","자동적 상징행동 (약 14~15개월)",
+    "단순 상징행동 (약 16~17개월)","단순 상징행동 조합 (약 18~19개월)","복합 상징행동 조합 (약 20~23개월)",
+    "물건대치 상징행동 (약 24~35개월)","대행자 놀이 (약 24~35개월)",
+    "두 가지 사회적 역할놀이 (약 36~47개월)","세 가지 사회적 역할놀이 (약 48~59개월)",
+    "복합적인 사회적 역할놀이 (약 60~72개월)"
+  ];
+  const SCHOOL_DOMAINS=["어휘","구문·형태","교실/학업언어","화용","이야기","설명담화","상위언어","읽기·문해"];
+  const CAS_MARKERS=["자·모음 오류의 비일관성","음절 간/음소 간 전환 어려움","부적절한 운율/강세"];
+  const MATERIAL_DOMAINS=["초기 의사소통","어휘","구문","화용","이야기","설명담화","읽기·문해","말소리","음운인식","놀이"];
+
+  const $=id=>document.getElementById(id);
+  const qsa=(sel,root=document)=>Array.from(root.querySelectorAll(sel));
+
+  function addOptions(id, arr, blank=true){
+    const el=$(id); if(!el) return;
+    el.innerHTML=(blank?'<option></option>':'')+arr.map(x=>`<option>${x}</option>`).join('');
+  }
+  function makeChecks(containerId, arr, namePrefix){
+    const box=$(containerId);
+    box.innerHTML=arr.map((x,i)=>`<label class="check"><input type="checkbox" data-group="${namePrefix}" value="${x}"><span>${x}</span></label>`).join('');
+  }
+
+  makeChecks("commFunctionChecks",COMM_FUNCTIONS,"commfunc");
+  makeChecks("commModeChecks",COMM_MODES,"commmode");
+  makeChecks("casChecks",CAS_MARKERS,"cas");
+  makeChecks("matDomainChecks",MATERIAL_DOMAINS,"matdomain");
+  addOptions("playStage",PLAY_STAGES,true);
+  addOptions("matAge",AGE_GROUPS,true);
+  addOptions("recAge",AGE_GROUPS,true);
+  addOptions("recDomain",MATERIAL_DOMAINS,true);
+
+  $("schoolRatings").innerHTML=SCHOOL_DOMAINS.map((x,i)=>`
+    <div class="field">
+      <label>${x}</label>
+      <select id="school_${i}">
+        <option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option>
+      </select>
+    </div>`).join('');
+
+  if(!$("evalDate").value) $("evalDate").value=new Date().toISOString().slice(0,10);
+
+  let materials=[];
+  let lastRecommendations=[];
+
+  function tab(name){
+    qsa("#nav button[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));
+    qsa(".section").forEach(s=>s.classList.toggle("active",s.id===name));
+    if(name==="report") renderReport();
+  }
+  qsa("#nav button[data-tab]").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.tab)));
+
+  function checked(group){
+    return qsa(`input[data-group="${group}"]:checked`).map(x=>x.value);
+  }
+  function setChecked(group, values){
+    const set=new Set(values||[]);
+    qsa(`input[data-group="${group}"]`).forEach(x=>x.checked=set.has(x.value));
+  }
+  function val(id){return ($(id)?.value||"").trim()}
+  function num(id){const n=Number($(id)?.value); return Number.isFinite(n)?n:null}
+  function yes(v){return ["예","있음","높음","Y","yes","true"].includes(String(v).trim())}
+
+  function state(){
+    const schoolRatings={};
+    SCHOOL_DOMAINS.forEach((d,i)=>schoolRatings[d]=Number($(`school_${i}`).value));
+    return {
+      meta:{version:"1.0-html",updatedAt:new Date().toISOString()},
+      basic:{
+        childId:val("childId"),alias:val("alias"),sex:val("sex"),birth:val("birth"),evalDate:val("evalDate"),
+        ageGroup:val("ageGroup"),diagnosis:val("diagnosis"),primaryArea:val("primaryArea"),speechLevel:val("speechLevel"),
+        referral:val("referral")
+      },
+      early:{
+        receptive:val("receptive"),expressive:val("expressive"),communicationFunctions:checked("commfunc"),
+        communicationModes:checked("commmode"),communicationExamples:val("commExamples"),
+        playStage:val("playStage"),playIndependence:val("playIndependence"),playExamples:val("playExamples"),
+        preferences:{food:val("prefFood"),object:val("prefObject"),activity:val("prefActivity"),other:val("prefOther")},
+        environmentVocab:val("envVocab"),caregiverPriority:val("caregiverPriority")
+      },
+      school:{
+        ratings:schoolRatings,notes:val("schoolNotes"),pragForm:val("pragForm"),pragTotal:num("pragTotal"),pragNotes:val("pragNotes"),
+        narrative:{tnw:num("tnw"),ndw:num("ndw"),cunits:num("cunits"),clauses:num("clauses")}
+      },
+      speech:{
+        standardNotes:val("standardNotes"),pcc:num("pcc"),intelligibility:val("intelligibility"),errorPhonemes:num("errorPhonemes"),
+        systematicPatterns:val("systematicPatterns"),inconsistency:num("inconsistency"),stimulability:val("stimulability"),
+        patternNotes:val("patternNotes"),residualError:val("residualError"),languageDisorder:val("languageDisorder"),
+        limitedInventory:val("limitedInventory"),paRisk:val("paRisk"),casMarkers:checked("cas"),cleftStatus:val("cleftStatus"),
+        oralMech:val("oralMech"),processingNotes:val("processingNotes")
+      },
+      intervention:{recommendations:lastRecommendations,longGoals:val("longGoals"),shortGoals:val("shortGoals"),homeGeneralization:val("homeGeneralization")},
+      materials
+    };
+  }
+
+  function applyState(s){
+    const b=s.basic||{}, e=s.early||{}, sc=s.school||{}, sp=s.speech||{}, iv=s.intervention||{};
+    const map={
+      childId:b.childId,alias:b.alias,sex:b.sex,birth:b.birth,evalDate:b.evalDate,ageGroup:b.ageGroup,diagnosis:b.diagnosis,
+      primaryArea:b.primaryArea,speechLevel:b.speechLevel,referral:b.referral,
+      receptive:e.receptive,expressive:e.expressive,commExamples:e.communicationExamples,playStage:e.playStage,
+      playIndependence:e.playIndependence,playExamples:e.playExamples,
+      prefFood:e.preferences?.food,prefObject:e.preferences?.object,prefActivity:e.preferences?.activity,prefOther:e.preferences?.other,
+      envVocab:e.environmentVocab,caregiverPriority:e.caregiverPriority,
+      schoolNotes:sc.notes,pragForm:sc.pragForm,pragTotal:sc.pragTotal,pragNotes:sc.pragNotes,
+      tnw:sc.narrative?.tnw,ndw:sc.narrative?.ndw,cunits:sc.narrative?.cunits,clauses:sc.narrative?.clauses,
+      standardNotes:sp.standardNotes,pcc:sp.pcc,intelligibility:sp.intelligibility,errorPhonemes:sp.errorPhonemes,
+      systematicPatterns:sp.systematicPatterns,inconsistency:sp.inconsistency,stimulability:sp.stimulability,patternNotes:sp.patternNotes,
+      residualError:sp.residualError,languageDisorder:sp.languageDisorder,limitedInventory:sp.limitedInventory,paRisk:sp.paRisk,
+      cleftStatus:sp.cleftStatus,oralMech:sp.oralMech,processingNotes:sp.processingNotes,
+      longGoals:iv.longGoals,shortGoals:iv.shortGoals,homeGeneralization:iv.homeGeneralization
+    };
+    Object.entries(map).forEach(([id,v])=>{if($(id) && v!==undefined && v!==null) $(id).value=v});
+    setChecked("commfunc",e.communicationFunctions);
+    setChecked("commmode",e.communicationModes);
+    setChecked("cas",sp.casMarkers);
+    SCHOOL_DOMAINS.forEach((d,i)=>{ if(sc.ratings && sc.ratings[d]!==undefined) $(`school_${i}`).value=sc.ratings[d] });
+    materials=Array.isArray(s.materials)?s.materials:[];
+    lastRecommendations=Array.isArray(iv.recommendations)?iv.recommendations:[];
+    renderMaterials(); renderRecommendations(); calcNarrative(); renderReport();
+  }
+
+  function moduleHint(){
+    const age=val("ageGroup"), area=val("primaryArea"), level=val("speechLevel");
+    let items=[];
+    if(age==="영유아(0~2세)") items=["초기 의사소통","상징놀이","선호도·환경어휘"];
+    else if(age==="학령전기(3~6세)") items=["수용·표현언어","의사소통 기능","상징놀이","선호도·환경어휘"];
+    else items=["학령기 언어","화용·담화","읽기·문해"];
+    if(area==="말소리") items.push("말소리 표준화/자발화 평가","말처리·음운처리","말소리 중재계획");
+    if(area==="화용·사회적 의사소통" && ["문장 수준","연결발화 가능"].includes(level)) items.push("CPLC/고차 화용 요약");
+    if(area==="읽기·문해") items.push("음운인식","해독·단어재인","읽기이해");
+    items=[...new Set(items)];
+    $("moduleHint").innerHTML="<b>권장 모듈:</b> "+items.join(" → ");
+  }
+  $("moduleBtn").addEventListener("click",moduleHint);
+
+  function calcNarrative(){
+    const t=num("tnw"), n=num("ndw"), c=num("cunits"), cl=num("clauses");
+    const clean=x=>Number.isFinite(x)?x:"-";
+    $("mTNW").textContent=t??"-"; $("mNDW").textContent=n??"-";
+    $("mTTR").textContent=(t>0&&n!==null)?clean((n/t).toFixed(3)):"-";
+    $("mMLC").textContent=(c>0&&t!==null)?clean((t/c).toFixed(2)):"-";
+    $("mClause").textContent=(c>0&&cl!==null)?clean((cl/c).toFixed(2)):"-";
+  }
+  ["tnw","ndw","cunits","clauses"].forEach(id=>$(id).addEventListener("input",calcNarrative));
+
+  function recommendSSD(){
+    const sp=state().speech, age=val("ageGroup");
+    const out=[];
+    if(sp.cleftStatus==="구조적/필연적 오류 의심"){
+      out.push(["구조적 문제 우선 확인","필연적 오류가 구조적 결함과 관련되면 조음치료 전에 의학적·구조적 접근의 우선 여부를 검토합니다."]);
+    } else if(sp.cleftStatus==="학습된 보상조음 의심"){
+      out.push(["구개열 보상조음 중재","기류 조절과 정확한 조음 위치를 중심으로 말 행동 수정을 검토합니다."]);
+    }
+    if((sp.inconsistency||0)>=40){
+      out.push(["핵심어휘접근법 검토","동일 낱말의 비일관성이 높을 때 기능적으로 중요한 고빈도 어휘의 일관된 산출을 우선 목표로 검토합니다."]);
+    }
+    if((sp.casMarkers||[]).length>=2){
+      out.push(["아동기 말실행증 심화평가 + 운동학습 기반 접근 검토","비일관적 자·모음 오류, 음절/음소 전환 문제, 비정상적 운율 가운데 여러 특성이 함께 보고되어 감별평가가 필요합니다. 적절한 경우 DTTC 등 단서 위계와 반복연습 기반 접근을 검토할 수 있습니다."]);
+    }
+    const nerr=sp.errorPhonemes||0;
+    if(sp.residualError==="예" || (nerr>0 && nerr<=2 && sp.systematicPatterns!=="예")){
+      out.push(["말운동 접근법 검토","오류가 소수 음소에 국한되거나 잔존오류 양상이라면 청지각 훈련, 조음 위치/방법, 단계적 산출 연습과 자기모니터링을 검토합니다."]);
+    }
+    if(sp.systematicPatterns==="예"){
+      out.push(["음운적 접근법 검토","체계적인 음운오류패턴이 확인되면 최소대립/대조 접근이나 주기법 등 음운체계 재조직화를 목표로 하는 접근을 검토합니다."]);
+      if(["매우 낮음","낮음"].includes(sp.intelligibility) || nerr>=3){
+        out.push(["주기법 우선 검토","여러 음소 오류와 낮은 말명료도가 함께 나타나는 경우 오류패턴을 순환적으로 다루는 방법을 검토합니다."]);
+      }
+    }
+    if(sp.languageDisorder==="예" || (["영유아(0~2세)","학령전기(3~6세)"].includes(age) && sp.limitedInventory==="예")){
+      out.push(["의사소통적 접근/EMT+PE 검토","언어 어려움이 동반되거나 어린 아동의 음소목록·음절구조가 제한적인 경우 자연스러운 상호작용 안에서 언어와 음운을 함께 촉진하는 접근을 검토합니다."]);
+    }
+    if(sp.paRisk==="예"){
+      out.push(["통합적 음운인식중재 병행 검토","음운인식/읽기 위험이 동반될 때 음소 식별·매칭, 분절·합성, 음운조작, 글자지식과 조음훈련을 연결합니다."]);
+    }
+    if(out.length===0) out.push(["추가 평가 후 접근 선택","현재 입력만으로 특정 접근을 우선시하기 어렵습니다. 오류의 일관성, 오류패턴, 자극반응도, 말명료도, 언어 및 음운처리 정보를 더 확인하세요."]);
+    lastRecommendations=out;
+    renderRecommendations();
+  }
+  function renderRecommendations(){
+    $("recommendations").innerHTML=lastRecommendations.map((r,i)=>`<div class="result-card"><h4>${i+1}. ${r[0]}</h4><div>${r[1]}</div></div>`).join("")+
+      `<div class="notice warn"><b>주의:</b> 위 결과는 자동 진단이 아니라 치료 접근을 검토하기 위한 후보입니다.</div>`;
+  }
+  $("recommendBtn").addEventListener("click",recommendSSD);
+
+  function addMaterial(){
+    const name=val("matName");
+    if(!name){alert("자료명을 입력하세요.");return}
+    const item={
+      id:"M"+String(materials.length+1).padStart(4,"0"),
+      name, age:val("matAge"), difficulty:val("matDifficulty"),
+      domains:checked("matdomain"), targets:val("matTargets"),
+      fileNote:val("matFileNote"), usage:val("matUsage")
+    };
+    materials.push(item);
+    renderMaterials();
+    ["matName","matTargets","matFileNote","matUsage"].forEach(id=>$(id).value="");
+    setChecked("matdomain",[]);
+  }
+  function renderMaterials(){
+    $("materialTableBody").innerHTML=materials.map((m,i)=>`<tr>
+      <td>${m.id}</td><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.age||"")}</td><td>${escapeHtml((m.domains||[]).join(", "))}</td>
+      <td>${escapeHtml(m.targets||"")}</td><td>${escapeHtml(m.difficulty||"")}</td>
+      <td><button class="btn" data-del="${i}">삭제</button></td></tr>`).join("");
+    qsa("[data-del]").forEach(b=>b.addEventListener("click",()=>{materials.splice(Number(b.dataset.del),1);materials.forEach((m,i)=>m.id="M"+String(i+1).padStart(4,"0"));renderMaterials()}));
+  }
+  $("addMaterialBtn").addEventListener("click",addMaterial);
+
+  function recommendMaterials(){
+    const age=val("recAge"), domain=val("recDomain"), diff=val("recDifficulty"), kw=val("recTarget").toLowerCase();
+    const scored=materials.map(m=>{
+      let score=0;
+      if(age && m.age===age) score+=3;
+      if(domain && (m.domains||[]).includes(domain)) score+=3;
+      if(kw && String(m.targets||"").toLowerCase().includes(kw)) score+=2;
+      if(diff && diff!=="상관없음" && m.difficulty===diff) score+=1;
+      return {...m,score};
+    }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,10);
+    if(!scored.length){
+      $("materialResults").innerHTML='<div class="notice">조건에 맞는 등록 자료가 없습니다.</div>';return;
+    }
+    $("materialResults").innerHTML=scored.map(m=>`<div class="result-card"><h4>${escapeHtml(m.name)} <span class="badge">적합도 ${m.score}</span></h4>
+      <div><b>목표:</b> ${escapeHtml(m.targets||"")}</div><div><b>활용:</b> ${escapeHtml(m.usage||"")}</div></div>`).join("");
+  }
+  $("recommendMaterialBtn").addEventListener("click",recommendMaterials);
+
+  function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+  function nl(s){return escapeHtml(s||"").replace(/\n/g,"<br>")}
+  function badges(arr){return (arr||[]).length?(arr||[]).map(x=>`<span class="badge">${escapeHtml(x)}</span>`).join(""):"-"}
+
+  function renderReport(){
+    const s=state(), b=s.basic,e=s.early,sc=s.school,sp=s.speech,iv=s.intervention;
+    const ratingRows=SCHOOL_DOMAINS.map(d=>`<tr><td>${d}</td><td>${sc.ratings[d]}/3</td></tr>`).join("");
+    const recs=(iv.recommendations||[]).map((r,i)=>`<div class="result-card"><h4>${i+1}. ${escapeHtml(r[0])}</h4><div>${escapeHtml(r[1])}</div></div>`).join("");
+    $("reportBody").innerHTML=`
+      <h3>기본정보</h3>
+      <table><tbody>
+      <tr><th>아동 ID</th><td>${escapeHtml(b.childId)}</td><th>이름/별칭</th><td>${escapeHtml(b.alias)}</td></tr>
+      <tr><th>생년월일</th><td>${escapeHtml(b.birth)}</td><th>평가일</th><td>${escapeHtml(b.evalDate)}</td></tr>
+      <tr><th>연령군</th><td>${escapeHtml(b.ageGroup)}</td><th>주 평가영역</th><td>${escapeHtml(b.primaryArea)}</td></tr>
+      <tr><th>진단/특이사항</th><td colspan="3">${nl(b.diagnosis)}</td></tr>
+      <tr><th>의뢰사유</th><td colspan="3">${nl(b.referral)}</td></tr>
+      </tbody></table>
+
+      <h3>영유아·학령전기</h3>
+      <p><b>이해언어:</b><br>${nl(e.receptive)||"-"}</p>
+      <p><b>표현언어:</b><br>${nl(e.expressive)||"-"}</p>
+      <p><b>의사소통 기능:</b> ${badges(e.communicationFunctions)}</p>
+      <p><b>산출형태:</b> ${badges(e.communicationModes)}</p>
+      <p><b>관찰 예시:</b><br>${nl(e.communicationExamples)||"-"}</p>
+      <p><b>상징놀이:</b> ${escapeHtml(e.playStage||"-")} / ${escapeHtml(e.playIndependence||"-")}</p>
+      <p><b>놀이 예시:</b><br>${nl(e.playExamples)||"-"}</p>
+      <p><b>환경어휘:</b><br>${nl(e.environmentVocab)||"-"}</p>
+
+      <h3>학령기·화용·문해</h3>
+      <table><thead><tr><th>영역</th><th>기록 평정</th></tr></thead><tbody>${ratingRows}</tbody></table>
+      <p><b>관찰/검사 메모:</b><br>${nl(sc.notes)||"-"}</p>
+      <p><b>화용평가:</b> ${escapeHtml(sc.pragForm||"-")} / ${sc.pragTotal??"-"}</p>
+      <p><b>화용 주요 강점·어려움:</b><br>${nl(sc.pragNotes)||"-"}</p>
+
+      <h3>말소리 평가</h3>
+      <table><tbody>
+      <tr><th>PCC</th><td>${sp.pcc??"-"}</td><th>말명료도</th><td>${escapeHtml(sp.intelligibility||"-")}</td></tr>
+      <tr><th>오류 음소 수</th><td>${sp.errorPhonemes??"-"}</td><th>체계적 오류패턴</th><td>${escapeHtml(sp.systematicPatterns||"-")}</td></tr>
+      <tr><th>비일관성</th><td>${sp.inconsistency??"-"}%</td><th>자극반응도</th><td>${escapeHtml(sp.stimulability||"-")}</td></tr>
+      </tbody></table>
+      <p><b>표준화/자발화 평가:</b><br>${nl(sp.standardNotes)||"-"}</p>
+      <p><b>오류 음소/음운변동:</b><br>${nl(sp.patternNotes)||"-"}</p>
+      <p><b>CAS 관련 관찰:</b> ${badges(sp.casMarkers)}</p>
+      <p><b>조음기관:</b><br>${nl(sp.oralMech)||"-"}</p>
+      <p><b>말처리/음운처리:</b><br>${nl(sp.processingNotes)||"-"}</p>
+
+      <h3>중재 접근 후보</h3>
+      ${recs||'<div class="notice">아직 생성하지 않았습니다.</div>'}
+
+      <h3>치료사 최종 계획</h3>
+      <p><b>장기목표</b><br>${nl(iv.longGoals)||"-"}</p>
+      <p><b>단기목표</b><br>${nl(iv.shortGoals)||"-"}</p>
+      <p><b>일반화/가정연계</b><br>${nl(iv.homeGeneralization)||"-"}</p>
+
+      <div class="notice warn"><b>주의:</b> 본 보고서는 임상 기록 및 의사결정 보조용이며 자동 진단 결과가 아닙니다.</div>
+    `;
+  }
+
+  function resetAll(){
+    if(!confirm("현재 입력 내용을 모두 지울까요?")) return;
+    localStorage.removeItem("slpClinicalV1");
+    location.reload();
+  }
+  $("newBtn").addEventListener("click",resetAll);
+
+  $("saveLocalBtn").addEventListener("click",()=>{
+    try{
+      localStorage.setItem("slpClinicalV1",JSON.stringify(state()));
+      alert("현재 브라우저에 저장했습니다.");
+    }catch(e){alert("브라우저 저장에 실패했습니다: "+e.message)}
+  });
+
+  $("downloadJsonBtn").addEventListener("click",()=>{
+    const s=state();
+    const name=(s.basic.childId||s.basic.alias||"slp_record").replace(/[\\/:*?"<>|]/g,"_");
+    const blob=new Blob([JSON.stringify(s,null,2)],{type:"application/json;charset=utf-8"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name+"_언어치료기록.json"; a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  $("importJson").addEventListener("change",async e=>{
+    const file=e.target.files?.[0]; if(!file) return;
+    try{
+      const s=JSON.parse(await file.text()); applyState(s); alert("기록을 불러왔습니다.");
+    }catch(err){alert("JSON 파일을 읽지 못했습니다: "+err.message)}
+    e.target.value="";
+  });
+
+  $("printBtn").addEventListener("click",()=>{renderReport();tab("report");setTimeout(()=>window.print(),120)});
+
+  ["childId","alias","diagnosis","primaryArea","speechLevel","referral","ageGroup",
+   "receptive","expressive","commExamples","playStage","playIndependence","playExamples",
+   "prefFood","prefObject","prefActivity","prefOther","envVocab","caregiverPriority",
+   "schoolNotes","pragForm","pragTotal","pragNotes","standardNotes","pcc","intelligibility",
+   "errorPhonemes","systematicPatterns","inconsistency","stimulability","patternNotes",
+   "residualError","languageDisorder","limitedInventory","paRisk","cleftStatus","oralMech","processingNotes",
+   "longGoals","shortGoals","homeGeneralization"].forEach(id=>{
+      if($(id)) $(id).addEventListener("input",()=>{ if(id==="ageGroup"||id==="primaryArea"||id==="speechLevel") moduleHint(); });
+   });
+
+  try{
+    const saved=localStorage.getItem("slpClinicalV1");
+    if(saved) applyState(JSON.parse(saved));
+  }catch(e){}
+  renderMaterials(); calcNarrative(); moduleHint(); renderReport();
+})();
+</script>
+</body>
+</html>
